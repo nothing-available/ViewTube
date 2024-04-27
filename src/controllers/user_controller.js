@@ -7,11 +7,11 @@ import { ApiResponse } from '../utils/apiResponse.js'
 const registerUser = asyncHandler(async (req, res) => {
     // get user detail
 
-    const { fullName, email, username, password } = req.body
+    const { fullName, email, userName, password } = req.body
 
     // validation -> empty
 
-    if ([fullName, email, username, password]
+    if ([fullName, email, userName, password]
         .some((field) => field?.trim() === '')) {
         throw new ApiError(400, 'All field are required')
     }
@@ -19,7 +19,7 @@ const registerUser = asyncHandler(async (req, res) => {
     // check ,already exist
 
     const existUser = await User.findOne({
-        $or: [{ username }, { email }]
+        $or: [{ userName }, { email }]
     })
 
     if (existUser) {
@@ -28,8 +28,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
     // check for avatar
 
-    const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage?.path;
+    const avatarLocalPath = req.files?.avatar?.[0]?.path;
+    const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
 
     if (!avatarLocalPath) {
         throw new ApiError(400, 'Avatar is required')
@@ -40,10 +40,9 @@ const registerUser = asyncHandler(async (req, res) => {
     const avatar = await uploadOnCloudinary(avatarLocalPath)
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
-    if (!avatar) {
-        throw new ApiError(400, 'avatar is required')
+    if (!avatar ) {
+        throw new ApiError(400, 'Failed to upload avatar');
     }
-
     //create object and entry in db
 
     const user = await User.create({
@@ -52,13 +51,13 @@ const registerUser = asyncHandler(async (req, res) => {
         coverImage: coverImage?.url || '',
         email,
         password,
-        username: username.toLowerCase()
+        userName: userName.toLowerCase()
     })
 
 
     // remove password and refersh token field from response
 
-    const createdUser = User.findById(user._id).select("-password -refreshToken");
+    const createdUser = await User.findById(user._id).select("-password -refreshToken")
 
     if (!createdUser) {
         throw new ApiError(500, 'Something wrong while registering the user')
@@ -70,4 +69,4 @@ const registerUser = asyncHandler(async (req, res) => {
 
 })
 
-export { registerUser }
+export { registerUser } 
