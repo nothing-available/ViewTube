@@ -9,6 +9,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
     const { fullName, email, userName, password } = req.body
 
+
     // validation -> empty
 
     if ([fullName, email, userName, password]
@@ -28,7 +29,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
     // check for avatar
 
-    const avatarLocalPath = req.files?.avatar?.[0]?.path;
+    const avatarLocalPath = req.files?.avatar[0]?.path;
     const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
 
     if (!avatarLocalPath) {
