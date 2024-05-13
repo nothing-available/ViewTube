@@ -9,15 +9,15 @@ const generateAccessTokenAndRefreshToken = async (userId) => {
     try {
         const user = await User.findById(userId);
         const accessToken = user.generateAccessToken()
-        const refershToken = user.generateRefreshToken()
+        const refreshToken = user.generateRefreshToken()
 
-        user.refershToken = refershToken;
+        user.refreshToken = refreshToken;
         await user.save({ validateBeforeSave: false });
 
-        return { accessToken, refershToken }
+        return { accessToken, refreshToken }
 
     } catch (error) {
-        throw new ApiError(500, 'Something went wring while generating access token and refresh token')
+        throw new ApiError(500, 'Something went wrong while generating access token and refresh token')
     }
 }
 
@@ -93,7 +93,7 @@ const logInUser = asyncHandler(async (req, res) => {
 
     const { email, userName, password } = req.body
 
-    if (!userName && !email) {
+    if (!(userName || email)) {
         throw new ApiError(400, 'email or username is required')
     }
 
@@ -111,7 +111,7 @@ const logInUser = asyncHandler(async (req, res) => {
         throw new ApiError(401, 'invalid credential')
     }
 
-    const { refershToken, accessToken } = await generateAccessTokenAndRefreshToken(user._id)
+    const { refreshToken, accessToken } = await generateAccessTokenAndRefreshToken(user?._id)
 
     const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
 
@@ -122,11 +122,11 @@ const logInUser = asyncHandler(async (req, res) => {
 
     return res.status(200)
         .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", refershToken, options)
+        .cookie("refreshToken", refreshToken, options)
         .json(
             new ApiResponse(200,
                 {
-                    user: loggedInUser, accessToken, refershToken
+                    user: loggedInUser, accessToken, refreshToken
                 },
                 "User Logged in successfully"
             )
@@ -136,11 +136,10 @@ const logInUser = asyncHandler(async (req, res) => {
 
 const logOutUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(
-        req.user._id, {
-        $set: {
-            refershToken: undefined
-        }
-    },
+        req.user._id,
+        {
+            $unset: { refreshToken: 1 }
+        },
         {
             new: true
         }
@@ -150,9 +149,11 @@ const logOutUser = asyncHandler(async (req, res) => {
         secure: true
     }
 
-    return res.status(200)
+    return res
+        .status(200)
         .clearCookie("accessToken", options)
         .clearCookie("refreshToken", options)
+        .json(new ApiResponse(200, {}, "User logged Out"))
 })
 
 export {
