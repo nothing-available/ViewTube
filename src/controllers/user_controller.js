@@ -206,9 +206,43 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     }
 })
 
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+
+    const { currentPassword, newPassword } = req.body
+
+    if (!currentPassword || !newPassword) {
+        throw new ApiError(401, "All fields are required");
+    }
+
+    const user = await User.findById(req.user?.id)
+
+    const isPasswordvalid = await user.isPasswordCorrect(currentPassword)
+
+    if (!isPasswordvalid) {
+        throw new ApiError(400, "Current password is wrong");
+    }
+
+    user.password = newPassword
+    await user.save({ validateBeforeSave: false })
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {}, 'password is changed successfully'));
+
+})
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+
+    return res
+        .status(200)
+        .json(200, req.user, "current user feched successfully")
+})
+
 export {
     registerUser,
     logInUser,
     logOutUser,
-    refreshAccessToken
+    refreshAccessToken,
+    changeCurrentPassword,
+    getCurrentUser
 } 
