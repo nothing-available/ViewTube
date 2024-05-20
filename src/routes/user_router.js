@@ -20,6 +20,6 @@ router.route('/login').post(logInUser)
 
 //secured
 router.route('/logout').post(verifyJwt, logOutUser)
-router.route('refesh-token').post(refreshAccessToken)
+router.route('/refresh-token').post(refreshAccessToken)
 
 export default router
